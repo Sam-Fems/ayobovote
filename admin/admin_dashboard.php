@@ -1,0 +1,277 @@
+<?php
+session_start();
+require_once 'classes/Admin.php';
+$admin = new Admin;
+
+$voter_count = $admin->fetch_voters();
+$votes_count = $admin->fetch_votes();
+$candidates_count = $admin->fetch_candidates();
+
+// echo "<pre>";
+//  print_r($votes_count);
+// echo "</pre>";
+
+
+
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Admin Dashboar2d - Ayobo Community Online Voting System" />
+    <title>Admin Dashboard - Ayobo Community</title>
+
+    <!-- Bootstrap 5.3 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --primary-dark: #2563eb;
+            --danger: #dc3545;
+            --success: #198754;
+            --warning: #ffc107;
+            --light-bg: #f8fafc;
+            --gray-600: #475569;
+            --gray-400: #94a3b8;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--light-bg);
+            color: #1e293b;
+            min-height: 100vh;
+        }
+
+        .navbar {
+            background: linear-gradient(to right, var(--danger), #c82333) !important;
+            padding: 1.25rem 0;
+        }
+
+        .stat-card {
+            border: none;
+            border-radius: 14px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.07);
+            transition: transform 0.2s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+        }
+
+        .icon-box {
+            width: 56px;
+            height: 56px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+        }
+
+        .bg-primary-soft {
+            background: rgba(59, 130, 246, 0.12);
+            color: var(--primary);
+        }
+
+        .bg-success-soft {
+            background: rgba(25, 135, 84, 0.12);
+            color: var(--success);
+        }
+
+        .bg-warning-soft {
+            background: rgba(255, 193, 7, 0.15);
+            color: var(--warning);
+        }
+
+        .action-btn {
+            font-weight: 500;
+            padding: 0.9rem;
+            border-radius: 10px;
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        .activity-item {
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        @media (max-width: 767px) {
+            .stat-card .card-body {
+                padding: 1.25rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-dark shadow">
+        <div class="container">
+            <span class="navbar-brand fw-semibold fs-4">Admin Dashboard</span>
+            <a href="login.php" class="btn btn-outline-light d-flex align-items-center">
+                <i class="bi bi-box-arrow-right me-2"></i>
+                Logout
+            </a>
+        </div>
+    </nav>
+
+    <div class="container py-5">
+
+        <?php require_once 'common/alert.php' ?>
+
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-5 gap-3">
+            <h2 class="fw-bold mb-0">Dashboard Overview</h2>
+            <small class="text-muted">Last updated: just now</small>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="row g-4 mb-5">
+            <div class="col-md-4">
+                <div class="card stat-card h-100">
+                    <div class="card-body d-flex align-items-center">
+                        <div class="icon-box bg-primary-soft me-3">
+                            <i class="bi bi-people-fill"></i>
+                        </div>
+                        <div>
+                            <h6 class="text-muted mb-1 small">Total Registered Voters</h6>
+                            <h3 class="fw-bold mb-0"><?php echo count($voter_count['data']) ?></h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card stat-card h-100">
+                    <div class="card-body d-flex align-items-center">
+                        <div class="icon-box bg-success-soft me-3">
+                            <i class="bi bi-check-circle-fill"></i>
+                        </div>
+                        <div>
+                            <h6 class="text-muted mb-1 small">Votes Cast</h6>
+                            <h3 class="fw-bold mb-0"><?php echo count($votes_count['data']) ?></h3>
+                            <small class="text-success">(78.4% turnout)</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card stat-card h-100">
+                    <div class="card-body d-flex align-items-center">
+                        <div class="icon-box bg-warning-soft me-3">
+                            <i class="bi bi-person-badge-fill"></i>
+                        </div>
+                        <div>
+                            <h6 class="text-muted mb-1 small">Active Candidates</h6>
+                            <h3 class="fw-bold mb-0"><?php echo count($candidates_count['data']) ?></h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- Quick Actions -->
+            <div class="col-lg-6">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-white border-bottom">
+                        <h5 class="mb-0 fw-semibold">Quick Actions</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-3">
+
+                            <!-- Dropdown for Add Candidate + Register Voter -->
+                            <div class="dropdown">
+                                <button class="btn btn-primary dropdown-toggle action-btn w-100 text-start" 
+                                        type="button" 
+                                        id="adminActionsDropdown" 
+                                        data-bs-toggle="dropdown" 
+                                        aria-expanded="false">
+                                    <i class="bi bi-gear me-2"></i> Admin Actions
+                                </button>
+                                <ul class="dropdown-menu w-100" aria-labelledby="adminActionsDropdown">
+                                    <li>
+                                        <a class="dropdown-item" href="admin_create_candidate.php">
+                                            <i class="bi bi-person-plus me-2 text-primary"></i> Add New Candidate
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="admin_register_voter.php">
+                                            <i class="bi bi-person-check me-2 text-success"></i> Register New Voter
+                                        </a>
+                                    </li>
+                                    <!-- You can easily add more items later -->
+                                    <!-- <li><hr class="dropdown-divider"></li> -->
+                                    <!-- <li><a class="dropdown-item text-warning" href="#"><i class="bi bi-pencil-square me-2"></i> Edit Something</a></li> -->
+                                </ul>
+                            </div>
+
+                            <!-- Keep the other two buttons as they were -->
+                            <a href="results.php" class="btn btn-warning text-dark action-btn">
+                                <i class="bi bi-bar-chart me-2"></i> View Live Results
+                            </a>
+                            <button class="btn btn-danger action-btn" 
+                                    onclick="return confirm('Are you sure you want to end the voting session? This action cannot be undone.');">
+                                <i class="bi bi-stop-circle me-2"></i> End Voting Session
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="col-lg-6">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-white border-bottom">
+                        <h5 class="mb-0 fw-semibold">Recent Activity</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-unstyled mb-0">
+                            <li class="activity-item">
+                                <small class="text-muted">2 minutes ago</small>
+                                <p class="mb-1">New vote cast by Voter #1023</p>
+                            </li>
+                            <li class="activity-item">
+                                <small class="text-muted">15 minutes ago</small>
+                                <p class="mb-1">New voter registered: Tunde Bakare</p>
+                            </li>
+                            <li class="activity-item">
+                                <small class="text-muted">1 hour ago</small>
+                                <p class="mb-1">Voting session successfully started</p>
+                            </li>
+                            <!-- You can add more dynamically later -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+
+</html>
