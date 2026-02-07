@@ -133,10 +133,12 @@ $candidates_count = $admin->getAllCandidates();
     <nav class="navbar navbar-dark shadow">
         <div class="container">
             <span class="navbar-brand fw-semibold fs-4">Admin Dashboard</span>
-            <a href="login.php" class="btn btn-outline-light d-flex align-items-center">
-                <i class="bi bi-box-arrow-right me-2"></i>
-                Logout
-            </a>
+            <form action="process/process_admin_logout.php" method="post">
+                <button type="submit" class="btn btn-outline-light d-flex align-items-center">
+                    <i class="bi bi-box-arrow-right me-2"></i>
+                    Logout
+                </button>
+            </form>
         </div>
     </nav>
 
@@ -237,7 +239,7 @@ $candidates_count = $admin->getAllCandidates();
                                 </ul>
                             </div>
 
-                            <a href="results.php" class="btn btn-warning text-dark action-btn">
+                            <a href="admin_manage_results.php" class="btn btn-warning text-dark action-btn">
                                 <i class="bi bi-bar-chart me-2"></i> View Live Results
                             </a>
                             <button class="btn btn-danger action-btn"

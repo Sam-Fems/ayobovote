@@ -228,6 +228,37 @@ class Admin extends Db
         }
     }
 
+    // In your Voter.php or Results.php class
+    public function getElectionResults()
+    {
+        try {
+            $stmt = $this->ayconn->prepare("
+            SELECT 
+                c.name,
+                c.party,
+                COALESCE(SUM(CASE WHEN v.candidate_id = c.id THEN 1 ELSE 0 END), 0) AS votes
+            FROM candidates c
+            LEFT JOIN votes v ON c.id = v.candidate_id
+            GROUP BY c.id
+            ORDER BY votes DESC
+        ");
+            $stmt->execute();
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $total = array_sum(array_column($rows, 'votes'));
+
+            // Calculate percentages
+            foreach ($rows as &$row) {
+                $row['percentage'] = $total > 0 ? round(($row['votes'] / $total) * 100, 1) : 0;
+            }
+
+            return $rows;
+        } catch (Exception $e) {
+            error_log("Results error: " . $e->getMessage());
+            return [];
+        }
+    }
+
     public function isLoggedIn()
     {
         return isset($_SESSION['admin_id']);
@@ -236,6 +267,6 @@ class Admin extends Db
     public function logout()
     {
         unset($_SESSION['admin_id']);
-        return true;
+        return ['success' => true];
     }
 }

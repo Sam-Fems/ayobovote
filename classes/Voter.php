@@ -120,6 +120,7 @@ class Voter extends Db
         try {
             $this->ayconn->beginTransaction();
 
+            // 1. Check if voter exists and has not voted
             $check = $this->ayconn->prepare(
                 "SELECT has_voted FROM voters WHERE id = ?"
             );
@@ -137,23 +138,61 @@ class Voter extends Db
                 return ['success' => false, 'message' => 'You have already voted'];
             }
 
+            // 2. Record the vote
             $vote = $this->ayconn->prepare(
-                "INSERT INTO votes (voter_id, candidate_id)
-             VALUES (?, ?)"
+                "INSERT INTO votes (voter_id, candidate_id) VALUES (?, ?)"
             );
             $vote->execute([$voter_id, $candidate_id]);
 
-            $update = $this->ayconn->prepare(
+            // 3. Mark voter as having voted
+            $updateVoter = $this->ayconn->prepare(
                 "UPDATE voters SET has_voted = 1 WHERE id = ?"
             );
-            $update->execute([$voter_id]);
+            $updateVoter->execute([$voter_id]);
+
+            // 4. Increment candidate vote count
+            $updateCandidate = $this->ayconn->prepare(
+                "UPDATE candidates SET vote_count = vote_count + 1 WHERE id = ?"
+            );
+            $updateCandidate->execute([$candidate_id]);
 
             $this->ayconn->commit();
 
             return ['success' => true, 'message' => 'Vote submitted successfully'];
         } catch (PDOException $e) {
             $this->ayconn->rollBack();
-            return ['success' => false, 'message' => $e->getMessage()];
+            error_log("Vote error: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Error submitting vote: ' . $e->getMessage()];
+        }
+    }
+
+    public function getElectionResults()
+    {
+        try {
+            $stmt = $this->ayconn->prepare("
+            SELECT 
+                c.name,
+                c.party,
+                COALESCE(SUM(CASE WHEN v.candidate_id = c.id THEN 1 ELSE 0 END), 0) AS votes
+            FROM candidates c
+            LEFT JOIN votes v ON c.id = v.candidate_id
+            GROUP BY c.id
+            ORDER BY votes DESC
+        ");
+            $stmt->execute();
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $total = array_sum(array_column($rows, 'votes'));
+
+            // Calculate percentages
+            foreach ($rows as &$row) {
+                $row['percentage'] = $total > 0 ? round(($row['votes'] / $total) * 100, 1) : 0;
+            }
+
+            return $rows;
+        } catch (Exception $e) {
+            error_log("Results error: " . $e->getMessage());
+            return [];
         }
     }
 

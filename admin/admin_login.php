@@ -131,7 +131,6 @@ require_once "classes/Admin.php";
 
         <div class="card shadow">
 
-            <!-- Red header to indicate admin / restricted area -->
             <div class="admin-header">
                 <i class="bi bi-shield-lock-fill" style="font-size: 3.5rem; opacity: 0.95;"></i>
                 <h3 class="mt-3 mb-2 fw-semibold">Admin Login</h3>
@@ -140,7 +139,6 @@ require_once "classes/Admin.php";
 
             <div class="card-body p-4 p-md-5">
 
-                <!-- You can include alert.php here if you have error messages -->
                 <?php require_once "common/alert.php"; ?>
 
                 <form action="process/process_admin_login.php" method="post">

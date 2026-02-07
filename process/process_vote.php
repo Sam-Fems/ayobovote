@@ -15,8 +15,8 @@ if (!isset($_POST['btn'])) {
     exit;
 }
 
-$voter_id     = $_SESSION['voter_db_id'];
-$candidate_id = $_POST['candidate_id'] ?? null;
+$voter_id     = (int)$_SESSION['voter_db_id'];
+$candidate_id = (int)($_POST['candidate_id'] ?? 0);
 
 
 if (empty($candidate_id)) {
