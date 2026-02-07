@@ -273,6 +273,74 @@ class Admin extends Db
         return $stmt->fetchAll(PDO::FETCH_COLUMN);
     }
 
+    public function endVotingSession($admin_id)
+    {
+        try {
+            $stmt = $this->ayconn->prepare("
+            UPDATE voting_status 
+            SET is_active = 0, 
+                ended_at = NOW(), 
+                ended_by_admin_id = ?
+            WHERE id = 1
+        ");
+            $stmt->execute([$admin_id]);
+
+            return $stmt->rowCount() > 0;
+        } catch (PDOException $e) {
+            error_log("End voting error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function getElectionStatus()
+    {
+        try {
+            $stmt = $this->ayconn->prepare("
+            SELECT 
+                is_active,
+                ended_at,
+                ended_by_admin_id,
+                updated_at
+            FROM voting_status 
+            WHERE id = 1
+            LIMIT 1
+        ");
+
+            $stmt->execute();
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$row) {
+                return [
+                    'is_active'         => true,
+                    'ended_at'          => null,
+                    'ended_by_admin_id' => null,
+                    'updated_at'        => null,
+                    'message'           => 'No status record found - voting assumed open'
+                ];
+            }
+
+            return [
+                'is_active'         => (bool) $row['is_active'],
+                'ended_at'          => $row['ended_at'],
+                'ended_by_admin_id' => $row['ended_by_admin_id'] ? (int)$row['ended_by_admin_id'] : null,
+                'updated_at'        => $row['updated_at'],
+                'message'           => $row['is_active']
+                    ? 'Voting is currently OPEN'
+                    : 'Voting has been CLOSED'
+            ];
+        } catch (PDOException $e) {
+            error_log("Election status error: " . $e->getMessage());
+
+            return [
+                'is_active'         => true,
+                'ended_at'          => null,
+                'ended_by_admin_id' => null,
+                'updated_at'        => null,
+                'message'           => 'Unable to check status due to database error - voting assumed open'
+            ];
+        }
+    }
+
     public function isLoggedIn()
     {
         return isset($_SESSION['admin_id']);

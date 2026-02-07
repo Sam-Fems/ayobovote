@@ -118,9 +118,10 @@ class Voter extends Db
     public function cast_vote($voter_id, $candidate_id)
     {
         try {
+            // Very important: start transaction FIRST
             $this->ayconn->beginTransaction();
 
-            // 1. Check if voter exists and has not voted
+            // 1. Check voter exists and hasn't voted
             $check = $this->ayconn->prepare(
                 "SELECT has_voted FROM voters WHERE id = ?"
             );
@@ -128,7 +129,7 @@ class Voter extends Db
 
             if ($check->rowCount() === 0) {
                 $this->ayconn->rollBack();
-                return ['success' => false, 'message' => 'Invalid voter'];
+                return ['success' => false, 'message' => 'Invalid voter ID'];
             }
 
             $voter = $check->fetch(PDO::FETCH_ASSOC);
@@ -138,31 +139,50 @@ class Voter extends Db
                 return ['success' => false, 'message' => 'You have already voted'];
             }
 
-            // 2. Record the vote
+            // 2. Check if voting is still open (add this check!)
+            $statusCheck = $this->ayconn->prepare("SELECT is_active FROM election_status WHERE id = 1");
+            $statusCheck->execute();
+            $status = $statusCheck->fetch(PDO::FETCH_ASSOC);
+
+            if (!$status || $status['is_active'] == 0) {
+                $this->ayconn->rollBack();
+                return ['success' => false, 'message' => 'Voting session has ended. No more votes can be cast.'];
+            }
+
+            // 3. Record the vote
             $vote = $this->ayconn->prepare(
                 "INSERT INTO votes (voter_id, candidate_id) VALUES (?, ?)"
             );
             $vote->execute([$voter_id, $candidate_id]);
 
-            // 3. Mark voter as having voted
+            // 4. Mark voter as voted
             $updateVoter = $this->ayconn->prepare(
                 "UPDATE voters SET has_voted = 1 WHERE id = ?"
             );
             $updateVoter->execute([$voter_id]);
 
-            // 4. Increment candidate vote count
+            // 5. Increment candidate vote count
             $updateCandidate = $this->ayconn->prepare(
                 "UPDATE candidates SET vote_count = vote_count + 1 WHERE id = ?"
             );
             $updateCandidate->execute([$candidate_id]);
 
+            // All good → commit
             $this->ayconn->commit();
 
-            return ['success' => true, 'message' => 'Vote submitted successfully'];
+            return ['success' => true, 'message' => 'Vote submitted successfully!'];
         } catch (PDOException $e) {
-            $this->ayconn->rollBack();
-            error_log("Vote error: " . $e->getMessage());
-            return ['success' => false, 'message' => 'Error submitting vote: ' . $e->getMessage()];
+            // Rollback ONLY if a transaction is actually active
+            if ($this->ayconn->inTransaction()) {
+                $this->ayconn->rollBack();
+            }
+
+            error_log("Vote casting error: " . $e->getMessage());
+
+            return [
+                'success' => false,
+                'message' => 'Error submitting vote: ' . $e->getMessage()
+            ];
         }
     }
 
@@ -193,6 +213,55 @@ class Voter extends Db
         } catch (Exception $e) {
             error_log("Results error: " . $e->getMessage());
             return [];
+        }
+    }
+
+    public function getElectionStatus()
+    {
+        try {
+            $stmt = $this->ayconn->prepare("
+            SELECT 
+                is_active,
+                ended_at,
+                ended_by_admin_id,
+                updated_at
+            FROM voting_status 
+            WHERE id = 1
+            LIMIT 1
+        ");
+
+            $stmt->execute();
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$row) {
+                return [
+                    'is_active'         => true,
+                    'ended_at'          => null,
+                    'ended_by_admin_id' => null,
+                    'updated_at'        => null,
+                    'message'           => 'No status record found - voting assumed open'
+                ];
+            }
+
+            return [
+                'is_active'         => (bool) $row['is_active'],
+                'ended_at'          => $row['ended_at'],
+                'ended_by_admin_id' => $row['ended_by_admin_id'] ? (int)$row['ended_by_admin_id'] : null,
+                'updated_at'        => $row['updated_at'],
+                'message'           => $row['is_active']
+                    ? 'Voting is currently OPEN'
+                    : 'Voting has been CLOSED'
+            ];
+        } catch (PDOException $e) {
+            error_log("Election status error: " . $e->getMessage());
+
+            return [
+                'is_active'         => true,
+                'ended_at'          => null,
+                'ended_by_admin_id' => null,
+                'updated_at'        => null,
+                'message'           => 'Unable to check status due to database error - voting assumed open'
+            ];
         }
     }
 

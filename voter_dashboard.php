@@ -4,17 +4,20 @@ require_once 'classes/Voter.php';
 require_once 'classes/Candidate.php';
 
 $candidate = new Candidate();
+$voter = new Voter();
+
+if (!isset($_SESSION['voter_logged_in'])) {
+  header("location: voter_login.php");
+  exit;
+}
+
 $candidates = $candidate->show_candidates();
 if (!$candidates['success']) {
   die('Unable to load candidates');
 }
 
 $candidates = $candidates['candidates'];
-
-if (!isset($_SESSION['voter_logged_in'])) {
-  header("location: voter_login.php");
-  exit;
-}
+$status = $voter->getElectionStatus();
 
 ?>
 
@@ -147,10 +150,23 @@ if (!isset($_SESSION['voter_logged_in'])) {
     </div>
   </nav>
 
-  <?php require_once("common/alert.php") ?>
-
   <!-- Main Content -->
   <div class="container py-5">
+
+    <div class="alert <?= $status['is_active'] ? 'alert-success' : 'alert-danger' ?> mb-4 shadow-sm">
+      <div class="d-flex align-items-center">
+        <i class="bi <?= $status['is_active'] ? 'bi-play-circle-fill' : 'bi-stop-circle-fill' ?> fs-4 me-3"></i>
+        <div>
+          <strong>Election Status:</strong> <?= htmlspecialchars($status['message']) ?>
+          <?php if (!$status['is_active'] && $status['ended_at']): ?>
+            <br>
+            <small>Ended on <?= date('M d, Y \a\t h:i A', strtotime($status['ended_at'])) ?></small>
+          <?php endif; ?>
+        </div>
+      </div>
+    </div>
+
+    <?php require_once("common/alert.php") ?>
 
     <!-- Header -->
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-5 gap-3">

@@ -9,9 +9,10 @@ $isAdmin = isset($_SESSION['admin_id']) && !empty($_SESSION['admin_id']);
 $voter_count = $admin->getAllVoters();
 $votes_count = $admin->fetch_votes();
 $candidates_count = $admin->getAllCandidates();
+$status = $admin->getElectionStatus();
 
 // echo "<pre>";
-//  print_r($votes_count);
+// print_r($status);
 // echo "</pre>";
 
 
@@ -144,6 +145,19 @@ $candidates_count = $admin->getAllCandidates();
 
     <div class="container py-5">
 
+        <div class="alert <?= $status['is_active'] ? 'alert-success' : 'alert-danger' ?> mb-4 shadow-sm">
+            <div class="d-flex align-items-center">
+                <i class="bi <?= $status['is_active'] ? 'bi-play-circle-fill' : 'bi-stop-circle-fill' ?> fs-4 me-3"></i>
+                <div>
+                    <strong>Election Status:</strong> <?= htmlspecialchars($status['message']) ?>
+                    <?php if (!$status['is_active'] && $status['ended_at']): ?>
+                        <br>
+                        <small>Ended on <?= date('M d, Y \a\t h:i A', strtotime($status['ended_at'])) ?></small>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+
         <?php require_once 'common/alert.php' ?>
 
         <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-5 gap-3">
@@ -242,10 +256,44 @@ $candidates_count = $admin->getAllCandidates();
                             <a href="admin_manage_results.php" class="btn btn-warning text-dark action-btn">
                                 <i class="bi bi-bar-chart me-2"></i> View Live Results
                             </a>
-                            <button class="btn btn-danger action-btn"
-                                onclick="return confirm('Are you sure you want to end the voting session? This action cannot be undone.');">
-                                <i class="bi bi-stop-circle me-2"></i> End Voting Session
-                            </button>
+                            <?php if (!$status['is_active']): ?>
+                                <button class="btn btn-danger action-btn w-100" disabled>
+                                    <i class="bi bi-stop-circle me-2"></i>Voting Already Ended
+                                </button>
+                            <?php else: ?>
+                                <button type="button" class="btn btn-danger action-btn w-100"
+                                    data-bs-toggle="modal" data-bs-target="#endVotingModal">
+                                    <i class="bi bi-stop-circle me-2"></i>End Voting Session
+                                </button>
+                            <?php endif; ?>
+                            <div class="modal fade" id="endVotingModal" tabindex="-1" aria-labelledby="endVotingModalLabel" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-danger text-white">
+                                            <h5 class="modal-title" id="endVotingModalLabel">End Voting Session?</h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p class="fw-bold text-danger">This action cannot be undone!</p>
+                                            <p>Once voting is ended:</p>
+                                            <ul>
+                                                <li>No more votes can be cast</li>
+                                                <li>Results become final</li>
+                                                <li>Voters will see a message that voting has closed</li>
+                                            </ul>
+                                            <p class="mt-3">Are you absolutely sure?</p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <form action="process/process_end_voting.php" method="POST" style="display: inline;">
+                                                <button type="submit" name="end_voting" class="btn btn-danger">
+                                                    Yes, End Voting Now
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
