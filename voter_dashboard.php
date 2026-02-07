@@ -157,10 +157,13 @@ $status = $voter->getElectionStatus();
       <div class="d-flex align-items-center">
         <i class="bi <?= $status['is_active'] ? 'bi-play-circle-fill' : 'bi-stop-circle-fill' ?> fs-4 me-3"></i>
         <div>
-          <strong>Election Status:</strong> <?= htmlspecialchars($status['message']) ?>
+          <strong>Current Status:</strong>
+          <?= htmlspecialchars($status['message']) ?>
           <?php if (!$status['is_active'] && $status['ended_at']): ?>
             <br>
-            <small>Ended on <?= date('M d, Y \a\t h:i A', strtotime($status['ended_at'])) ?></small>
+            <small class="d-block mt-1">
+              Ended: <?= date('M d, Y \a\t h:i A', strtotime($status['ended_at'])) ?>
+            </small>
           <?php endif; ?>
         </div>
       </div>

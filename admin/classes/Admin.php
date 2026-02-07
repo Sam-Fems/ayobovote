@@ -273,21 +273,44 @@ class Admin extends Db
         return $stmt->fetchAll(PDO::FETCH_COLUMN);
     }
 
+    public function startVotingSession($admin_id)
+    {
+        try {
+            $stmt = $this->ayconn->prepare("
+            UPDATE voting_status 
+            SET 
+                is_active = 1,
+                ended_at = NULL,
+                ended_by_admin_id = NULL
+            WHERE id = 1
+        ");
+
+            $stmt->execute();
+
+            return $stmt->rowCount() > 0;
+        } catch (PDOException $e) {
+            error_log("Start voting session error: " . $e->getMessage());
+            return false;
+        }
+    }
+
     public function endVotingSession($admin_id)
     {
         try {
             $stmt = $this->ayconn->prepare("
             UPDATE voting_status 
-            SET is_active = 0, 
+            SET 
+                is_active = 0, 
                 ended_at = NOW(), 
                 ended_by_admin_id = ?
             WHERE id = 1
         ");
+
             $stmt->execute([$admin_id]);
 
             return $stmt->rowCount() > 0;
         } catch (PDOException $e) {
-            error_log("End voting error: " . $e->getMessage());
+            error_log("End voting session error: " . $e->getMessage());
             return false;
         }
     }

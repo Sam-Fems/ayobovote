@@ -149,10 +149,13 @@ $status = $admin->getElectionStatus();
             <div class="d-flex align-items-center">
                 <i class="bi <?= $status['is_active'] ? 'bi-play-circle-fill' : 'bi-stop-circle-fill' ?> fs-4 me-3"></i>
                 <div>
-                    <strong>Election Status:</strong> <?= htmlspecialchars($status['message']) ?>
+                    <strong>Current Status:</strong>
+                    <?= htmlspecialchars($status['message']) ?>
                     <?php if (!$status['is_active'] && $status['ended_at']): ?>
                         <br>
-                        <small>Ended on <?= date('M d, Y \a\t h:i A', strtotime($status['ended_at'])) ?></small>
+                        <small class="d-block mt-1">
+                            Ended: <?= date('M d, Y \a\t h:i A', strtotime($status['ended_at'])) ?>
+                        </small>
                     <?php endif; ?>
                 </div>
             </div>
@@ -266,6 +269,17 @@ $status = $admin->getElectionStatus();
                                     <i class="bi bi-stop-circle me-2"></i>End Voting Session
                                 </button>
                             <?php endif; ?>
+                            <?php if (!$status['is_active']): ?>
+                                <button type="button" class="btn btn-success action-btn w-100 mt-3"
+                                    data-bs-toggle="modal" data-bs-target="#startVotingModal">
+                                    <i class="bi bi-play-circle-fill me-2"></i>Start New Voting Session
+                                </button>
+                            <?php else: ?>
+                                <button class="btn btn-success action-btn w-100 mt-3" disabled>
+                                    <i class="bi bi-play-circle-fill me-2"></i>Voting is Already Open
+                                </button>
+                            <?php endif; ?>
+
                             <div class="modal fade" id="endVotingModal" tabindex="-1" aria-labelledby="endVotingModalLabel" aria-hidden="true">
                                 <div class="modal-dialog modal-dialog-centered">
                                     <div class="modal-content">
@@ -288,6 +302,34 @@ $status = $admin->getElectionStatus();
                                             <form action="process/process_end_voting.php" method="POST" style="display: inline;">
                                                 <button type="submit" name="end_voting" class="btn btn-danger">
                                                     Yes, End Voting Now
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="modal fade" id="startVotingModal" tabindex="-1" aria-labelledby="startVotingModalLabel" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-success text-white">
+                                            <h5 class="modal-title" id="startVotingModalLabel">Start New Voting Session?</h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p>This will:</p>
+                                            <ul>
+                                                <li>Re-open voting for all voters</li>
+                                                <li>Allow new votes to be cast</li>
+                                                <li>Reset the "ended" timestamp</li>
+                                            </ul>
+                                            <p class="mt-3 fw-bold">Are you sure you want to start a new session?</p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <form action="process/process_start_voting.php" method="POST" style="display: inline;">
+                                                <button type="submit" name="start_voting" class="btn btn-success">
+                                                    Yes, Start Voting
                                                 </button>
                                             </form>
                                         </div>
